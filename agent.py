@@ -24,7 +24,48 @@ class Agent:
 
 
     def get_state(self, game):
-        pass
+        head = game.snake[0]
+        # points in all directions
+        pointLeft  = Point(head.x - 20, head.y)
+        pointRight = Point(head.x + 20, head.y)
+        pointUp    = Point(head.x, head.y - 20)
+        pointDown  = Point(head.x, head.y + 20)
+        # all directions otherwise
+        dirLeft = game.direction == Direction.LEFT
+        dirRight = game.direction == Direction.RIGHT
+        dirUp    = game.direction == Direction.UP
+        dirDown = game.direction == Direction.DOWN
+        # state is an array constituting current condition
+        state = [
+            # if there is danger straight ahead
+            (dirRight and game.is_collision(pointRight)) or
+            (dirLeft  and game.is_collision(pointLeft))  or
+            (dirUp    and game.is_collision(pointUp))    or
+            (dirDown  and game.is_collision(pointDown)),
+            # if there is danger to the right
+            (dirUp    and game.is_collision(pointRight)) or
+            (dirDown  and game.is_collision(pointLeft))  or
+            (dirLeft  and game.is_collision(pointUp))    or
+            (dirRight and game.is_collision(pointDown)),
+            # if there is danger to the left
+            (dirDown  and game.is_collision(pointRight)) or
+            (dirUp    and game.is_collision(pointLeft))  or
+            (dirRight and game.is_collision(pointUp))    or
+            (dirLeft  and game.is_collision(pointDown)),
+            # add each direction's boolean value to show move direction
+            dirLeft,
+            dirRight, 
+            dirUp, 
+            dirDown, 
+            # add the location of the food
+            # for food at left
+            game.food.x < game.head.x,
+            game.food.x > game.head.x,
+            game.food.y < game.head.y,
+            game.food.y > game.head.y,
+        ]
+        # return as array of ints
+        return np.array(state, dtype=int)
 
     def remember(self, state, action, reward, next_state, done):
         pass
