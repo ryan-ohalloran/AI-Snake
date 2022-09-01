@@ -51,6 +51,7 @@ class SnakeGameAI:
         self.score = 0
         self.food = None
         self._place_food()
+        self.frame_iteration = 0
         
     def _place_food(self):
         x = random.randint(0, (self.w-BLOCK_SIZE )//BLOCK_SIZE )*BLOCK_SIZE 
@@ -133,7 +134,7 @@ class SnakeGameAI:
             new_direction = clock_wise[next_idx]
         else:
             next_idx = (idx - 1) % 4
-            new_direction = clock_wise(next_idx)
+            new_direction = clock_wise[next_idx]
         self.direction = new_direction
         x = self.head.x
         y = self.head.y

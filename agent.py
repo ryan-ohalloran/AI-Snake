@@ -1,10 +1,11 @@
-from sre_parse import State
-from tkinter.tix import MAX
+#!/usr/bin/env python3
 import torch
 import random
 import numpy as np
 from collections import deque
 from snake_game_ai import SnakeGameAI, Direction, Point
+from model import Linear_QNet, QTrainer
+from helper import plot
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1_000
@@ -17,14 +18,12 @@ class Agent:
         # randomness
         self.epsilon = 0
         # discount rate
-        self.gamma = 0
+        self.gamma = 0.9
         # mem - if we exeed, automatically removes elements from the left
         self.memory = deque(maxlen=MAX_MEMORY)
         # model
-        self.model = None
-        self.trainer = None
-        
-
+        self.model = Linear_QNet(11, 256, 3)
+        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     def get_state(self, game):
         head = game.snake[0]
@@ -41,20 +40,20 @@ class Agent:
         # state is an array constituting current condition
         state = [
             # if there is danger straight ahead
-            (dirRight and game.is_collision(pointRight)) or
-            (dirLeft  and game.is_collision(pointLeft))  or
-            (dirUp    and game.is_collision(pointUp))    or
-            (dirDown  and game.is_collision(pointDown)),
+            (dirRight and game._is_collision(pointRight)) or
+            (dirLeft  and game._is_collision(pointLeft))  or
+            (dirUp    and game._is_collision(pointUp))    or
+            (dirDown  and game._is_collision(pointDown)),
             # if there is danger to the right
-            (dirUp    and game.is_collision(pointRight)) or
-            (dirDown  and game.is_collision(pointLeft))  or
-            (dirLeft  and game.is_collision(pointUp))    or
-            (dirRight and game.is_collision(pointDown)),
+            (dirUp    and game._is_collision(pointRight)) or
+            (dirDown  and game._is_collision(pointLeft))  or
+            (dirLeft  and game._is_collision(pointUp))    or
+            (dirRight and game._is_collision(pointDown)),
             # if there is danger to the left
-            (dirDown  and game.is_collision(pointRight)) or
-            (dirUp    and game.is_collision(pointLeft))  or
-            (dirRight and game.is_collision(pointUp))    or
-            (dirLeft  and game.is_collision(pointDown)),
+            (dirDown  and game._is_collision(pointRight)) or
+            (dirUp    and game._is_collision(pointLeft))  or
+            (dirRight and game._is_collision(pointUp))    or
+            (dirLeft  and game._is_collision(pointDown)),
             # add each direction's boolean value to show move direction
             dirLeft,
             dirRight, 
@@ -99,7 +98,7 @@ class Agent:
             final_move[move] = 1
         else:
             state_0 = torch.tensor(state, dtype=torch.float)
-            prediction = self.model.predict(state_0)
+            prediction = self.model(state_0)
             move = torch.argmax(prediction).item()
         return final_move
 
@@ -132,9 +131,13 @@ def train():
             # check if there's a new high score
             if score > record:
                 record = score
-                # TODO: agent.model.save()
-        print(f'Game: {agent.n_games}, Score: {score}, Record: {record}')
-        # TODO: Plot
+                agent.model.save()
+            print(f'Game: {agent.n_games}, Score: {score}, Record: {record}')
+            plot_scores.append(score)
+            total_score += score
+            mean_score = total_score / agent.n_games
+            plot_mean_scores.append(mean_score)
+            plot(plot_scores, plot_mean_scores)
 
 if __name__ == '__main__':
     train()
